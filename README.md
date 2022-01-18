@@ -1,2 +1,2 @@
-# local_backtest
+# LocalBacktest
 a simple local backtest tool
