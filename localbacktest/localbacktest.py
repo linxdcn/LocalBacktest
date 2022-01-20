@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 import pandas as pd
 
+from localbacktest.data import get_market_data
+
 __all__ = ['LocalBacktest']
 
 class Context():
@@ -8,8 +10,8 @@ class Context():
 
     Attributes:
         securities (list): security list, eg: ['000001.SZ','600000.SH']
-        start_date (str): '20200901'
-        end_date (str): '20200901'
+        start_date (str): '2020-09-01'
+        end_date (str): '2020-09-01'
         capital (int):
         benchmark (str): '000300.SH'
         commission (float): 0.0003
@@ -54,6 +56,19 @@ class Trade():
     pass
 
 class LocalBacktest():
+    '''Trade
+
+    Attributes:
+        __init_func (func): 
+            Args:
+                context (Context):
+
+        __handle_data_func (func):
+            Args:
+                datetime (datetime)
+                context (Context)
+                data (NULL): 因为请求远程数据较慢，所以本地回测暂不主动输送数据，可自行按需请求
+    '''
 
     def __init__(self, init_func, handle_data_func):
         self.__context = Context()
@@ -65,9 +80,8 @@ class LocalBacktest():
         self.__capital = Capital(self.__context.capital)
         self.__position_dict = {}
         self.__trade_list = []
-
-        start = datetime.strptime(self._context.start_date, "%Y%m%d")
-        end = datetime.strptime(self._context.end_date, "%Y%m%d")
+        start = datetime.strptime(self.__context.start_date, "%Y-%m-%d")
+        end = datetime.strptime(self.__context.end_date, "%Y-%m-%d")
         for i in range((end - start).days+1): 
             current_date = start + timedelta(days = i) 
             print(current_date)

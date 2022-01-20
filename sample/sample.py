@@ -1,10 +1,10 @@
-from localbacktest.localbacktest import LocalBacktest
+from localbacktest import *
 
 def initialize(context):
     print("call handle data")
     context.securities = ['600000.SH']
-    context.start_date = '20210301'
-    context.end_date = '20210401'
+    context.start_date = '2021-03-01'
+    context.end_date = '2021-04-01'
     context.capital = 1000000
     context.benchmark = '000300.SH'
     context.commission = 0.0003

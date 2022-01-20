@@ -5,20 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python",
+            "name": "current file",
             "type": "python",
             "request": "launch",
-            "stopOnEntry": false,
-            "python": "${command:python.interpreterPath}",
             "program": "${file}",
             "cwd": "${workspaceRoot}",
             "env": {"PYTHONPATH":"${workspaceRoot}"},
-            "envFile": "${workspaceRoot}/.env",
-            "debugOptions": [
-                "WaitOnAbnormalExit",
-                "WaitOnNormalExit",
-                "RedirectOutput"
-            ]
         }
     ]
 }
