@@ -72,7 +72,7 @@ def __get_from_joinquant(security, start_date, end_date):
     global jq_init
     from jqdatasdk import auth, get_price
     if not jq_init:
-        auth('13760233638', 'Dong@99247431')
+        auth('xxx', 'xxx')
         jq_init = True
     to_jqcode = lambda s : s.replace('SH', 'XSHG').replace('SZ', 'XSHE')
     from_fqcode = lambda s : s.replace('XSHG', 'SH').replace('XSHE', 'SZ')
