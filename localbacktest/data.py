@@ -30,7 +30,7 @@ def get_market_data(security, start_date, end_date):
                         2021-12-22  20.29  19.86   96198591.0
                         2021-12-23  19.87  19.65   69722678.0
     '''
-    print(__get_from_joinquant(security, start_date, end_date))
+    print(__get_from_wind(security, start_date, end_date))
 
 def __get_from_wind(security, start_date, end_date):
     global wind_init
@@ -41,14 +41,32 @@ def __get_from_wind(security, start_date, end_date):
         wind_init = True
         wind_datasource = w
     
-    result = {}
-    for code in security:
-        error, data = wind_datasource.wsd(code, "open,close,volume", start_date, end_date, "PriceAdj=F", usedf=True)
-        if error == 0:
-            data.columns=data.columns.map(lambda x:x.lower())
-            data.replace(0, np.nan, inplace=True)
-            result[code] = data
-    return result
+    if (len(security) == 1):
+        error, result = wind_datasource.wsd(security, 'open,close,volume', start_date, end_date, "PriceAdj=F", usedf=True)
+        result.columns = [s.lower() for s in result.columns]
+        result.replace(0, np.nan, inplace=True)
+        result['security'] = security[0]
+        result['datetime'] = result.index
+        result.set_index(['security', 'datetime'], inplace=True)
+        return result
+    else:
+        result = pd.DataFrame(columns=['datetime', 'security', 'open', 'close', 'volume'])
+        for col in ['open', 'close', 'volume']:
+            error, data = wind_datasource.wsd(security, col, start_date, end_date, "PriceAdj=F", usedf=True)
+            idx = 0
+            row = len(data)
+            for s in data.columns:
+                for i in range(row):
+                    if col == 'open':
+                        result.loc[idx, 'datetime'] = data.index[i]
+                        result.loc[idx, 'security'] = s
+                    result.loc[idx, col] = data[s].iloc[i]
+                    idx += 1
+        result.set_index(['security', 'datetime'], inplace=True)
+        result.replace(0, np.nan, inplace=True)
+        return result
+
+    
 
 def __get_from_joinquant(security, start_date, end_date):
     global jq_init
@@ -66,13 +84,5 @@ def __get_from_joinquant(security, start_date, end_date):
     return result
 
 
-# get_market_data(["603990.SH"], "2021-12-21", "2022-01-19")
-# get_market_data(["603990.SH", "600030.SH"], "2021-12-21", "2022-01-19")
-
-# get_market_data(['000001.SZ'], "2021-12-21", "2021-12-23")
-get_market_data(['000001.SZ', '000002.SZ'], "2021-12-21", "2021-12-23")
-
-# df1 = pd.DataFrame([[1, 2], [3, 4]], columns=['A', 'B'], index=['a', 'b'])
-# df2 = pd.DataFrame([[5, 6], [7, 8]], columns=['A', 'B'], index=['a', 'b'])
-# df = pd.concat([df1, df2], keys=('df1','df2'))
-# print(type(df))
+get_market_data(["603990.SH"], "2021-12-21", "2022-01-19")
+get_market_data(["603990.SH", "600030.SH"], "2021-12-21", "2022-01-19")
