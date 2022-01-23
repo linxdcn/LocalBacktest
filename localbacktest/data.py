@@ -2,9 +2,13 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
+from localbacktest.common import LbtConfig
+
 wind_init = False
 wind_datasource = any
 jq_init = False
+
+__all__ = ['get_market_data']
 
 def get_market_data(security, start_date, end_date):
     '''get_market_data
@@ -30,7 +34,12 @@ def get_market_data(security, start_date, end_date):
                         2021-12-22  20.29  19.86   96198591.0
                         2021-12-23  19.87  19.65   69722678.0
     '''
-    print(__get_from_wind(security, start_date, end_date))
+    if LbtConfig.get_datasource() == 'wind':
+        return __get_from_wind(security, start_date, end_date)
+    elif LbtConfig.get_datasource() == 'jq':
+        return __get_from_joinquant(security, start_date, end_date)
+    else:
+        return None
 
 def __get_from_wind(security, start_date, end_date):
     global wind_init
@@ -52,7 +61,7 @@ def __get_from_wind(security, start_date, end_date):
     else:
         result = pd.DataFrame(columns=['datetime', 'security', 'open', 'close', 'volume'])
         for col in ['open', 'close', 'volume']:
-            error, data = wind_datasource.wsd(security, col, start_date, end_date, "PriceAdj=F", usedf=True)
+            error, data = wind_datasource.wsd(security, col, start_date, end_date, "PriceAdj=F;Fill=Blank", usedf=True)
             idx = 0
             row = len(data)
             for s in data.columns:
@@ -72,17 +81,14 @@ def __get_from_joinquant(security, start_date, end_date):
     global jq_init
     from jqdatasdk import auth, get_price
     if not jq_init:
-        auth('xxx', 'xxx')
+        auth(LbtConfig.get_jq_user(), LbtConfig.get_jq_password())
         jq_init = True
     to_jqcode = lambda s : s.replace('SH', 'XSHG').replace('SZ', 'XSHE')
     from_fqcode = lambda s : s.replace('XSHG', 'SH').replace('XSHE', 'SZ')
     new_security = [to_jqcode(s) for s in security]
-    result = get_price(new_security, start_date, end_date, fields=['open', 'close', 'volume'], panel=False)
+    result = get_price(new_security, start_date, end_date, fields=['open', 'close', 'volume'], panel=False, fill_paused=False)
     result.rename(columns={"time": "datetime", "code": "security"}, inplace=True)
     result['security'] = result['security'].apply(from_fqcode)
     result.set_index(['security', 'datetime'], inplace=True)
+    result.replace(0, np.nan, inplace=True)
     return result
-
-
-get_market_data(["603990.SH"], "2021-12-21", "2022-01-19")
-get_market_data(["603990.SH", "600030.SH"], "2021-12-21", "2022-01-19")
