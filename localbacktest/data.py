@@ -25,14 +25,14 @@ def get_market_data(security, start_date, end_date):
 
     Returns:
         DataFrame: a multiIndex Daframe, a simple example:
-                                     open  close       volume
-            security    datetime                             
-            000001.SH   2021-12-21  17.49  17.59   89373404.0
-                        2021-12-22  17.62  17.39   97692775.0
-                        2021-12-23  17.40  17.32  105957594.0
-            000002.SH   2021-12-21  19.49  20.31  159263253.0
-                        2021-12-22  20.29  19.86   96198591.0
-                        2021-12-23  19.87  19.65   69722678.0
+                                    open  close  pre_close
+            security    datetime                           
+            603990.SH   2021-12-21  20.61  20.82      20.74
+                        2021-12-22  20.72  20.57      20.82
+                        2021-12-23  20.50  20.16      20.57
+            600030.SH   2021-12-21  25.83  26.11      25.88
+                        2021-12-22  26.12  25.88      26.11
+                        2021-12-23  25.91  25.93      25.88
     '''
     if LbtConfig.get_datasource() == 'wind':
         return __get_from_wind(security, start_date, end_date)
@@ -86,7 +86,7 @@ def __get_from_joinquant(security, start_date, end_date):
     to_jqcode = lambda s : s.replace('SH', 'XSHG').replace('SZ', 'XSHE')
     from_fqcode = lambda s : s.replace('XSHG', 'SH').replace('XSHE', 'SZ')
     new_security = [to_jqcode(s) for s in security]
-    result = get_price(new_security, start_date, end_date, fields=['open', 'close', 'volume'], panel=False, fill_paused=False)
+    result = get_price(new_security, start_date, end_date, fields=['open', 'close', 'pre_close'], panel=False, fill_paused=False)
     result.rename(columns={"time": "datetime", "code": "security"}, inplace=True)
     result['security'] = result['security'].apply(from_fqcode)
     result.set_index(['security', 'datetime'], inplace=True)

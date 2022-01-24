@@ -5,7 +5,7 @@ def initialize(context):
     context.securities = ['600000.SH']
     context.start_date = '2021-03-01'
     context.end_date = '2021-04-01'
-    context.capital = 1000000
+    context.capital = 100000
     context.benchmark = '000300.SH'
     context.commission = 0.0003
 

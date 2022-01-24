@@ -2,8 +2,8 @@
 class LbtConfig():
     # wind or jq
     __datasource = 'wind'
-    __jq_user = 'xxx'
-    __jq_password = 'xxx'
+    __jq_user = 'jq_user'
+    __jq_password = 'jq_password'
 
     @staticmethod
     def set_datasource(source):
