@@ -137,4 +137,4 @@ dmypy.json
 *.code-workspace
 
 # local backtest
-sample/debug.py
+sample/debug*

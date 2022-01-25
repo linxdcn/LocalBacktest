@@ -10,7 +10,7 @@ jq_init = False
 
 __all__ = ['get_market_data']
 
-def get_market_data(security, start_date, end_date):
+def get_market_data(security, start_date, end_date, fields=['open', 'close', 'pre_close']):
     '''get_market_data
 
     接入数据源要求:
@@ -22,6 +22,7 @@ def get_market_data(security, start_date, end_date):
         security (list): 后缀说明: 上交所,SH; 深交所,SZ; 北交所,BJ
         start_date (str): '2020-09-01'
         end_date (str): '2020-09-01'
+        fields
 
     Returns:
         DataFrame: a multiIndex Daframe, a simple example:
@@ -51,7 +52,7 @@ def __get_from_wind(security, start_date, end_date):
         wind_datasource = w
     
     if (len(security) == 1):
-        error, result = wind_datasource.wsd(security, 'open,close,volume', start_date, end_date, "PriceAdj=F", usedf=True)
+        error, result = wind_datasource.wsd(security, 'open,close,pre_close', start_date, end_date, "PriceAdj=F", usedf=True)
         result.columns = [s.lower() for s in result.columns]
         result.replace(0, np.nan, inplace=True)
         result['security'] = security[0]
@@ -59,8 +60,8 @@ def __get_from_wind(security, start_date, end_date):
         result.set_index(['security', 'datetime'], inplace=True)
         return result
     else:
-        result = pd.DataFrame(columns=['datetime', 'security', 'open', 'close', 'volume'])
-        for col in ['open', 'close', 'volume']:
+        result = pd.DataFrame(columns=['datetime', 'security', 'open', 'close', 'pre_close'])
+        for col in ['open', 'close', 'pre_close']:
             error, data = wind_datasource.wsd(security, col, start_date, end_date, "PriceAdj=F;Fill=Blank", usedf=True)
             idx = 0
             row = len(data)

@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 
 from localbacktest.data import get_market_data
+from localbacktest.plot import basic_plot
 
 __all__ = ['LocalBacktest']
 
@@ -217,17 +218,22 @@ class LocalBacktest():
         self.__trade_list.append(trade)
         return True
 
+    def summary_result(self):
+        dict = {
+                    "returns": self.__nav['nav'].iloc[-1] - 1,
+                    "available_fund": self.__capital.available_fund,
+                    "holding_value": self.__capital.holding_value
+                }
+        return pd.DataFrame([dict])
+
     def summary_nav(self):
         return self.__nav
 
-    def summary_returns(self):
-        return_df = self.__nav.copy()
-        return_df['benchmark'] = return_df['benchmark'] - 1
-        return_df['nav'] = return_df['nav'] - 1
-        return return_df
-
     def summary_trade(self):
         return pd.DataFrame([t.as_dict() for t in self.__trade_list])
+
+    def plot(self):
+        basic_plot(self.__nav)
 
     def __get_row_data(self, security, date_str):
         try:
