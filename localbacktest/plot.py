@@ -1,6 +1,5 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdate
 
 def basic_plot(nav_df):
     nav_df = nav_df.set_index(['datetime'])
