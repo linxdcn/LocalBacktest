@@ -57,6 +57,7 @@ class Trade():
         volume (int):
         price (float):
         amount (float):
+        commission (float):
         status (int): 0 for success, > 0 for error
         err_msg (str):
     '''
@@ -66,11 +67,12 @@ class Trade():
         self.volume = volume
         self.price = 0.0
         self.amount = 0.0
+        self.commission = 0.0
         self.status = None
         self.err_msg = None
 
     def as_dict(self):
-        return {'security': self.security, 'tradeside': self.tradeside, 'volume': self.volume, 'price': self.price, 'amount': self.amount, 'status': self.status, 'err_msg': self.err_msg}
+        return {'security': self.security, 'tradeside': self.tradeside, 'volume': self.volume, 'price': self.price, 'amount': self.amount, 'commission': self.commission, 'status': self.status, 'err_msg': self.err_msg}
 
 class LocalBacktest():
     '''Trade
@@ -104,11 +106,12 @@ class LocalBacktest():
         self.__lastday_asset = self.__capital.total_asset #昨日总资产
         self.__marketdata_df = get_market_data(self.__context.securities, 
                                         self.__context.start_date,
-                                        self.__context.end_date) #回测区间所有行情数据
-
+                                        self.__context.end_date,
+                                        fields=['open', 'close', 'pre_close']) #回测区间所有行情数据
         benchmark_df = get_market_data([self.__context.benchmark], 
                                         self.__context.start_date,
-                                        self.__context.end_date)
+                                        self.__context.end_date,
+                                        fields=['open', 'close', 'pre_close'])
         benchmark_df.reset_index(inplace=True)
         self.__nav = pd.DataFrame(columns=['datetime', 'nav', 'benchmark'])
         self.__nav['benchmark'] = (benchmark_df['close'] / benchmark_df['pre_close']).cumprod()
@@ -144,12 +147,12 @@ class LocalBacktest():
         security (str):
         volume (int):
         trade_side (bool): 'buy' or 'sell'
-        price (str): 'close' or 'open', default='open'
+        price (str): 'close' or 'open', default='close'
 
     Returns:
         bool: True or False
     '''
-    def order(self, security, volume, tradeside, price = 'open'):
+    def order(self, security, volume, tradeside, price = 'close'):
         context = self.__context
         capital = self.__capital
         position_dict = self.__position_dict
@@ -168,28 +171,30 @@ class LocalBacktest():
             trade.err_msg = '停牌禁止交易'
             return False
 
+        target_price = round(row_data.loc[price], 2)
         #买入方向
         if tradeside == 'buy':
             
-            buy_capital = row_data.loc[price] * volume * (1 + context.commission)
+            buy_capital = round(target_price * volume * (1 + context.commission), 2)
             if buy_capital > capital.available_fund:
                 trade.status = 99
                 trade.err_msg = '资金不足'
-                return False         
+                return False
 
             trade.status = 0
-            trade.price = row_data.loc[price]
+            trade.price = target_price
             trade.amount = trade.price * trade.volume
+            trade.commission = round(target_price * volume * context.commission, 2)
 
             position = position_dict.get(security, Position(security, 0.0, 0.0, 0))
-            increase_profit = (row_data.loc[price] - position.last_price) * position.volume
+            increase_profit = (target_price - position.last_price) * position.volume
             position.volume += volume
-            position.amount += increase_profit + row_data.loc[price] * volume
-            position.last_price = row_data.loc[price]
+            position.amount += increase_profit + target_price * volume
+            position.last_price = target_price
             position_dict[security] = position
 
             capital.available_fund -= buy_capital
-            capital.holding_value += row_data.loc[price] * volume + increase_profit
+            capital.holding_value += target_price * volume + increase_profit
             capital.total_asset = capital.available_fund + capital.holding_value
 
         #卖出方向
@@ -200,19 +205,20 @@ class LocalBacktest():
                 trade.err_msg = '证券不足'
                 return False   
             
-            sell_capital = row_data.loc[price] * volume * (1 - context.commission)
+            sell_capital = round(target_price * volume * (1 - context.commission), 2)
             trade.status = 0
-            trade.price = row_data.loc[price]
+            trade.price = target_price
             trade.amount = trade.price * trade.volume
+            trade.commission = round(target_price * volume * context.commission, 2)
 
             position.volume -= volume
-            increase_profit = (row_data.loc[price] - position.last_price) * position.volume
-            position.amount += -row_data.loc[price] * volume + increase_profit
-            position.last_price = row_data.loc[price]
+            increase_profit = (target_price - position.last_price) * position.volume
+            position.amount += -target_price * volume + increase_profit
+            position.last_price = target_price
             position_dict[security] = position
 
             capital.available_fund += sell_capital
-            capital.holding_value -= row_data.loc[price] * volume
+            capital.holding_value -= target_price * volume
             capital.total_asset = capital.available_fund + capital.holding_value
         
         self.__trade_list.append(trade)
